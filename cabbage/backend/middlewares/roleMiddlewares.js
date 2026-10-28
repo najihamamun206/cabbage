@@ -1,0 +1,68 @@
+const User = require('../models/userModel')
+const jwt = require('jsonwebtoken');
+const userMiddleware = async (req, res, next) => {
+    try {
+        const { authorization } = req.headers
+        if (!authorization) {
+            return res.status(400).json({ success: false, message: 'Token required' })
+        }
+        const token = authorization.split(' ')[1]
+        const decode = jwt.verify(token, process.env.JWT_SECRET)
+        if (decode.role != 'user') {
+            return res.status(401).json({ success: false, message: 'Unauthorized request' })
+        }
+        const user = await User.findById(decode._id)
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' })
+        }
+        req.user = user
+        next()
+    } catch (error) {
+        return res.status(400).json({ success: false, message: 'Token invalid or expried' })
+    }
+}
+
+const adminMiddleware = async (req, res, next) => {
+    try {
+        const { authorization } = req.headers
+        if (!authorization) {
+            return res.status(400).json({ success: false, message: 'Token required' })
+        }
+        const token = authorization.split(' ')[1]
+        const decode = jwt.verify(token, process.env.JWT_SECRET)
+        if (decode.role != 'admin') {
+            return res.status(401).json({ success: false, message: 'Unauthorized request' })
+        }
+        const user = await User.findById(decode._id)
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' })
+        }
+        req.user = user
+        next()
+    } catch (error) {
+        return res.status(400).json({ success: false, message: 'Token invalid or expried' })
+    }
+}
+const vendorMiddleware = async (req, res, next) => {
+    try {
+        const { authorization } = req.headers
+        if (!authorization) {
+            return res.status(400).json({ success: false, message: 'Token required' })
+        }
+        const token = authorization.split(' ')[1]
+        const decode = jwt.verify(token, process.env.JWT_SECRET)
+        if (decode.role != 'admin' && decode.role != 'vendor') {
+            return res.status(401).json({ success: false, message: 'Unauthorized request' })
+        }
+        const user = await User.findById(decode._id)
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' })
+        }
+        req.user = user
+        next()
+    } catch (error) {
+        return res.status(400).json({ success: false, message: 'Token invalid or expried' })
+    }
+}
+
+module.exports = { userMiddleware, adminMiddleware, vendorMiddleware }
