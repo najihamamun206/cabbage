@@ -1,11 +1,12 @@
 const jwt = require('jsonwebtoken')
+const User = require('../models/userSchema')
 
 const getTokenFromRequest = (req) => {
   const authorization = req.headers.authorization || ''
   return authorization.startsWith('Bearer ') ? authorization.slice(7) : null
 }
 
-const authenticate = (req, res, next) => {
+const authenticate = async (req, res, next) => {
   const token = getTokenFromRequest(req)
 
   if (!token) {
@@ -13,7 +14,12 @@ const authenticate = (req, res, next) => {
   }
 
   try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET)
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    const user = await User.findById(decoded._id)
+    if (!user || user.status === 'suspended') {
+      return res.status(401).json({ success: false, message: 'Account is unavailable' })
+    }
+    req.user = user
     next()
   } catch {
     return res.status(401).json({ success: false, message: 'Invalid or expired token' })

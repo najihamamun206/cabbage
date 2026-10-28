@@ -52,6 +52,9 @@ const login = async (req, res) => {
   if (!user || !(await bcrypt.compare(password || '', user.password))) {
     return res.status(401).json({ success: false, message: 'Invalid email or password' })
   }
+  if (user.status === 'suspended') {
+    return res.status(403).json({ success: false, message: 'This account has been suspended' })
+  }
   return res.json({ success: true, user: publicUser(user), token: createToken(user) })
 }
 
